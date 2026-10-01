@@ -1,0 +1,224 @@
+import random
+import matplotlib.pyplot as plt
+
+# ==========================================
+# Genetic Algorithm for Function Optimization
+# Inspired by:
+# "An Improved Adaptive Genetic Algorithm
+#  for Function Optimization"
+# ==========================================
+
+# Mathematical function
+def fitness_function(x):
+    return x ** 2
+
+
+# Convert binary chromosome to decimal
+def decode(chromosome):
+    return int("".join(map(str, chromosome)), 2)
+
+
+# Create initial population
+def create_population(population_size, chromosome_length):
+    return [
+        [random.randint(0, 1) for _ in range(chromosome_length)]
+        for _ in range(population_size)
+    ]
+
+
+# Calculate fitness of every chromosome
+def calculate_fitness(population):
+    return [
+        fitness_function(decode(chromosome))
+        for chromosome in population
+    ]
+
+
+# Roulette-wheel selection
+def selection(population, fitness_values):
+
+    total_fitness = sum(fitness_values)
+
+    if total_fitness == 0:
+        return random.choice(population).copy()
+
+    probabilities = [
+        fitness / total_fitness
+        for fitness in fitness_values
+    ]
+
+    return random.choices(
+        population,
+        weights=probabilities,
+        k=1
+    )[0].copy()
+
+
+# Adaptive crossover and mutation probabilities
+def adaptive_probabilities(fitness_values):
+
+    f_max = max(fitness_values)
+    f_min = min(fitness_values)
+    f_avg = sum(fitness_values) / len(fitness_values)
+
+    # Avoid division by zero
+    if f_max == f_min:
+        return 0.8, 0.05
+
+    # Population fitness spread
+    diversity = (f_max - f_min) / (abs(f_avg) + 1e-10)
+
+    # Adaptive crossover probability
+    Pc = 0.6 + 0.3 * min(diversity, 1.0)
+
+    # Adaptive mutation probability
+    Pm = 0.01 + 0.09 * (1 - min(diversity, 1.0))
+
+    return Pc, Pm
+
+
+# One-point crossover
+def crossover(parent1, parent2, Pc):
+
+    if random.random() < Pc:
+
+        point = random.randint(1, len(parent1) - 1)
+
+        child1 = (
+            parent1[:point] +
+            parent2[point:]
+        )
+
+        child2 = (
+            parent2[:point] +
+            parent1[point:]
+        )
+
+        return child1, child2
+
+    return parent1.copy(), parent2.copy()
+
+
+# Mutation
+def mutation(chromosome, Pm):
+
+    chromosome = chromosome.copy()
+
+    for i in range(len(chromosome)):
+
+        if random.random() < Pm:
+            chromosome[i] = 1 - chromosome[i]
+
+    return chromosome
+
+
+# ==========================================
+# Main Genetic Algorithm
+# ==========================================
+
+def genetic_algorithm(
+    population_size=20,
+    chromosome_length=5,
+    generations=50
+):
+
+    population = create_population(
+        population_size,
+        chromosome_length
+    )
+
+    best_solution = None
+    best_fitness = float("-inf")
+
+    history = []
+
+    for generation in range(generations):
+
+        # Calculate fitness
+        fitness_values = calculate_fitness(population)
+
+        # Find best solution
+        generation_best_index = fitness_values.index(
+            max(fitness_values)
+        )
+
+        generation_best = population[
+            generation_best_index
+        ]
+
+        generation_best_fitness = fitness_values[
+            generation_best_index
+        ]
+
+        # Update global best
+        if generation_best_fitness > best_fitness:
+
+            best_fitness = generation_best_fitness
+
+            best_solution = generation_best.copy()
+
+        history.append(best_fitness)
+
+        # Adaptive probabilities
+        Pc, Pm = adaptive_probabilities(
+            fitness_values
+        )
+
+        # New population
+        new_population = []
+
+        while len(new_population) < population_size:
+
+            # Selection
+            parent1 = selection(
+                population,
+                fitness_values
+            )
+
+            parent2 = selection(
+                population,
+                fitness_values
+            )
+
+            # Crossover
+            child1, child2 = crossover(
+                parent1,
+                parent2,
+                Pc
+            )
+
+            # Mutation
+            child1 = mutation(child1, Pm)
+            child2 = mutation(child2, Pm)
+
+            new_population.append(child1)
+
+            if len(new_population) < population_size:
+                new_population.append(child2)
+
+        population = new_population
+
+        print(
+            f"Generation {generation + 1:2d} | "
+            f"Best x = {decode(best_solution):2d} | "
+            f"Fitness = {best_fitness:4d} | "
+            f"Pc = {Pc:.3f} | "
+            f"Pm = {Pm:.3f}"
+        )
+
+    return best_solution, best_fitness, history
+
+
+# ==========================================
+# Run the algorithm
+# ==========================================
+
+best_chromosome, best_fitness, history = genetic_algorithm()
+
+best_x = decode(best_chromosome)
+
+print("\n========== FINAL RESULT ==========")
+print("Best chromosome :", best_chromosome)
+print("Best x          :", best_x)
+print("Best fitness    :", best_fitness)
+print("Function        : f(x) = x^2")
