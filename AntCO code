@@ -1,0 +1,333 @@
+
+import random
+import time
+import networkx as nx
+import matplotlib.pyplot as plt
+
+
+# --------------------------------------------------
+# 1. CREATE THE GRAPH
+# --------------------------------------------------
+
+def create_graph():
+    G = nx.Graph()
+
+    edges = [
+        (0, 1), (0, 2), (0, 3),
+        (1, 2), (1, 4),
+        (2, 3), (2, 4),
+        (3, 4), (3, 5),
+        (4, 5), (4, 6),
+        (5, 6), (5, 7),
+        (6, 7)
+    ]
+
+    G.add_edges_from(edges)
+    return G
+
+
+# --------------------------------------------------
+# 2. CHECK WHETHER A COLOR IS VALID
+# --------------------------------------------------
+
+def is_valid_color(G, vertex, color, coloring):
+    return all(
+        coloring.get(neighbor) != color
+        for neighbor in G.neighbors(vertex)
+    )
+
+
+# --------------------------------------------------
+# 3. DSATUR HEURISTIC
+# Select the uncolored vertex with the highest
+# saturation degree. Break ties using vertex degree.
+# --------------------------------------------------
+
+def select_vertex_dsatur(G, coloring):
+    uncolored = [
+        v for v in G.nodes() if v not in coloring
+    ]
+
+    def priority(v):
+        neighbor_colors = {
+            coloring[u]
+            for u in G.neighbors(v)
+            if u in coloring
+        }
+
+        saturation = len(neighbor_colors)
+        degree = G.degree(v)
+
+        return saturation, degree
+
+    return max(uncolored, key=priority)
+
+
+# --------------------------------------------------
+# 4. HEURISTIC INFORMATION FOR A COLOR
+# Estimate how promising a color is.
+# Avoid choices that restrict uncolored neighbors.
+# --------------------------------------------------
+
+def heuristic_value(G, vertex, color, coloring, used_colors):
+    if not is_valid_color(G, vertex, color, coloring):
+        return 0.0
+
+    penalty = 0
+
+    for neighbor in G.neighbors(vertex):
+        if neighbor in coloring:
+            continue
+
+        # Colors currently available to this neighbor
+        available = [
+            c for c in range(used_colors)
+            if is_valid_color(G, neighbor, c, coloring)
+        ]
+
+        # Would assigning this color leave the
+        # neighbor with no existing-color option?
+        if color in available and len(available) == 1:
+            penalty += 1
+
+    # Existing colors are preferred to creating
+    # a new color, while preserving valid coloring.
+    if color < used_colors:
+        return 1.0 / (1.0 + penalty)
+    else:
+        return 0.25 / (1.0 + penalty)
+
+
+# --------------------------------------------------
+# 5. CONSTRUCT A SOLUTION USING ACO
+# --------------------------------------------------
+
+def construct_solution(
+    G, pheromone, alpha=1.0, beta=2.0
+):
+    coloring = {}
+    n = G.number_of_nodes()
+
+    while len(coloring) < n:
+
+        # Use DSATUR instead of random vertex order
+        vertex = select_vertex_dsatur(G, coloring)
+
+        used_colors = (
+            max(coloring.values()) + 1
+            if coloring else 0
+        )
+
+        # Existing colors and one possible new color
+        candidates = list(range(used_colors + 1))
+
+        # Remove colors that conflict with neighbors
+        candidates = [
+            c for c in candidates
+            if is_valid_color(G, vertex, c, coloring)
+        ]
+
+        weights = []
+
+        for color in candidates:
+            tau = pheromone[vertex][color] ** alpha
+
+            eta = heuristic_value(
+                G, vertex, color, coloring, used_colors
+            )
+
+            # A small positive floor prevents zero weight
+            eta = max(eta, 0.001)
+
+            weights.append(tau * (eta ** beta))
+
+        chosen = random.choices(
+            candidates, weights=weights, k=1
+        )[0]
+
+        coloring[vertex] = chosen
+
+    return coloring
+
+
+# --------------------------------------------------
+# 6. LOCAL SEARCH
+# Try to eliminate the highest-numbered color.
+# --------------------------------------------------
+
+def local_search(G, coloring):
+    coloring = coloring.copy()
+
+    while coloring:
+        highest = max(coloring.values())
+        changed = False
+
+        for vertex in G.nodes():
+
+            if coloring[vertex] != highest:
+                continue
+
+            for color in range(highest):
+                if is_valid_color(
+                    G, vertex, color, coloring
+                ):
+                    coloring[vertex] = color
+                    changed = True
+                    break
+
+        if highest not in coloring.values():
+            continue
+
+        if not changed:
+            break
+
+    return coloring
+
+
+# --------------------------------------------------
+# 7. ACO MAIN ALGORITHM
+# --------------------------------------------------
+
+def aco_graph_coloring(
+    G,
+    ants=30,
+    iterations=100,
+    evaporation=0.3,
+    alpha=1.0,
+    beta=2.0
+):
+    n = G.number_of_nodes()
+
+    pheromone = {
+        v: [1.0] * n for v in G.nodes()
+    }
+
+    best_coloring = None
+    best_count = n
+
+    for iteration in range(iterations):
+
+        solutions = []
+
+        # Each ant builds one coloring
+        for _ in range(ants):
+            coloring = construct_solution(
+                G, pheromone, alpha, beta
+            )
+
+            coloring = local_search(G, coloring)
+
+            count = len(set(coloring.values()))
+            solutions.append((coloring, count))
+
+            if count < best_count:
+                best_count = count
+                best_coloring = coloring.copy()
+
+        # Pheromone evaporation
+        for v in G.nodes():
+            for c in range(n):
+                pheromone[v][c] *= (1 - evaporation)
+                pheromone[v][c] = max(
+                    pheromone[v][c], 0.01
+                )
+
+        # Reinforce the iteration's best solution
+        iteration_best, iteration_count = min(
+            solutions, key=lambda item: item[1]
+        )
+
+        deposit = 1.0 / iteration_count
+
+        for vertex, color in iteration_best.items():
+            pheromone[vertex][color] += deposit
+
+        print(
+            f"Iteration {iteration + 1}: "
+            f"Iteration best = {iteration_count}, "
+            f"Overall best = {best_count}"
+        )
+
+    return best_coloring, best_count
+
+
+# --------------------------------------------------
+# 8. VERIFY THE RESULT
+# --------------------------------------------------
+
+def verify_coloring(G, coloring):
+    return all(
+        coloring[u] != coloring[v]
+        for u, v in G.edges()
+    )
+
+
+# --------------------------------------------------
+# 9. DISPLAY THE COLORED GRAPH
+# --------------------------------------------------
+
+def display_graph(G, coloring):
+    palette = [
+        "red", "blue", "green", "orange",
+        "purple", "cyan", "pink", "brown"
+    ]
+
+    node_colors = [
+        palette[coloring[v] % len(palette)]
+        for v in G.nodes()
+    ]
+
+    pos = nx.spring_layout(G, seed=42)
+
+    nx.draw(
+        G,
+        pos,
+        with_labels=True,
+        node_color=node_colors,
+        node_size=900,
+        font_color="white",
+        font_weight="bold",
+        edge_color="black"
+    )
+
+    plt.title(
+        f"ACO + DSATUR: {len(set(coloring.values()))} colors"
+    )
+    plt.show()
+
+
+# --------------------------------------------------
+# 10. RUN THE PROGRAM
+# --------------------------------------------------
+
+if __name__ == "__main__":
+
+    random.seed(42)
+
+    G = create_graph()
+
+    start = time.perf_counter()
+
+    coloring, count = aco_graph_coloring(
+        G,
+        ants=30,
+        iterations=100,
+        evaporation=0.3,
+        alpha=1.0,
+        beta=2.0
+    )
+
+    elapsed = time.perf_counter() - start
+
+    print("\nFINAL RESULT")
+
+    for vertex in sorted(coloring):
+        print(
+            f"Vertex {vertex}: Color {coloring[vertex]}"
+        )
+
+    print("\nNumber of colors:", count)
+    print("Valid coloring:", verify_coloring(G, coloring))
+    print(f"Execution time: {elapsed:.4f} seconds")
+
+    display_graph(G, coloring)
