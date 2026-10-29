@@ -1,0 +1,220 @@
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ==========================================
+# 1. INITIALIZE NETWORK PARAMETERS
+# ==========================================
+np.random.seed(42)
+
+N = 200
+AREA = 200
+GRID_SIZE = 50
+INITIAL_ENERGY = 0.5
+MAX_ROUNDS = 3000
+PA = 0.25
+
+# Radio energy model
+E_ELEC = 50e-9
+E_FS = 10e-12
+E_MP = 0.0013e-12
+E_DA = 5e-9
+PACKET_SIZE = 4000
+
+BASE_STATION = np.array([0.0, 0.0])
+
+# ==========================================
+# 2. DEPLOY SENSOR NODES
+# ==========================================
+positions = np.random.uniform(0, AREA, (N, 2))
+energy = np.full(N, INITIAL_ENERGY)
+alive = np.ones(N, dtype=bool)
+
+def distance(a, b):
+    return np.linalg.norm(a - b)
+
+# ==========================================
+# 3. CREATE GRID-BASED CLUSTERS
+# ==========================================
+def create_clusters():
+    clusters = {}
+
+    for i, pos in enumerate(positions):
+        if alive[i]:
+            cell = (
+                int(pos[0] // GRID_SIZE),
+                int(pos[1] // GRID_SIZE)
+            )
+            clusters.setdefault(cell, []).append(i)
+
+    return clusters
+
+# ==========================================
+# 4. SELECT CLUSTER HEADS
+# ==========================================
+def select_cluster_heads(clusters):
+    heads = []
+
+    for nodes in clusters.values():
+        head = max(nodes, key=lambda i: energy[i])
+        heads.append(head)
+
+    return heads
+
+# ==========================================
+# 5. CUCKOO SEARCH-INSPIRED ROUTING
+# ==========================================
+def select_next_hop(head, heads):
+    candidates = [
+        h for h in heads
+        if h != head
+        and distance(positions[h], BASE_STATION)
+        < distance(positions[head], BASE_STATION)
+    ]
+
+    if not candidates:
+        return -1
+
+    def fitness(h):
+        d = distance(positions[h], BASE_STATION) + 1e-9
+        return energy[h] / d
+
+    best = max(candidates, key=fitness)
+
+    # Random exploration
+    if np.random.random() < PA:
+        best = candidates[np.random.randint(len(candidates))]
+
+    return best
+
+# ==========================================
+# 6. ENERGY CONSUMPTION MODEL
+# ==========================================
+def transmit_energy(bits, d):
+    if d < 87:
+        return bits * (E_ELEC + E_FS * d**2)
+    else:
+        return bits * (E_ELEC + E_MP * d**4)
+
+def consume_energy(node, amount):
+    energy[node] = max(0.0, energy[node] - amount)
+
+    if energy[node] <= 0:
+        alive[node] = False
+
+# ==========================================
+# 7. RUN WSN SIMULATION
+# ==========================================
+alive_history = []
+residual_history = []
+first_dead_round = None
+half_dead_round = None
+last_dead_round = None
+
+for round_no in range(1, MAX_ROUNDS + 1):
+
+    clusters = create_clusters()
+
+    if not clusters:
+        break
+
+    heads = select_cluster_heads(clusters)
+
+    # Sensor nodes transmit to cluster heads
+    for nodes in clusters.values():
+        head = max(nodes, key=lambda i: energy[i])
+
+        for node in nodes:
+            if node != head and alive[node]:
+                d = distance(positions[node], positions[head])
+                cost = transmit_energy(PACKET_SIZE, d)
+                consume_energy(node, cost)
+
+                if alive[head]:
+                    consume_energy(head, PACKET_SIZE * E_ELEC)
+
+    # Cluster heads forward aggregated data
+    for head in heads:
+        if not alive[head]:
+            continue
+
+        consume_energy(head, PACKET_SIZE * E_DA)
+
+        next_hop = select_next_hop(head, heads)
+
+        if next_hop != -1 and alive[next_hop]:
+            d = distance(positions[head], positions[next_hop])
+            cost = transmit_energy(PACKET_SIZE, d)
+            consume_energy(head, cost)
+
+            if alive[next_hop]:
+                consume_energy(next_hop, PACKET_SIZE * E_ELEC)
+        else:
+            d = distance(positions[head], BASE_STATION)
+            cost = transmit_energy(PACKET_SIZE, d)
+            consume_energy(head, cost)
+
+    alive_count = int(np.sum(alive))
+    alive_history.append(alive_count)
+    residual_history.append(float(np.sum(energy)))
+
+    if alive_count < N and first_dead_round is None:
+        first_dead_round = round_no
+
+    if alive_count <= N // 2 and half_dead_round is None:
+        half_dead_round = round_no
+
+    if alive_count == 0:
+        last_dead_round = round_no
+        break
+
+# ==========================================
+# 8. PRINT SIMULATION RESULTS
+# ==========================================
+print("\n========== HCS-INSPIRED WSN RESULTS ==========")
+print("Total sensor nodes:", N)
+print("First node death round:", first_dead_round)
+print("Half nodes dead round:", half_dead_round)
+print("All nodes dead round:", last_dead_round)
+print("Alive nodes at end:", int(np.sum(alive)))
+print("Residual energy (J):", round(float(np.sum(energy)), 4))
+print("Total simulation rounds:", len(alive_history))
+print("==============================================")
+
+# ==========================================
+# 9. GRAPH 1: NETWORK LIFETIME
+# ==========================================
+plt.figure(figsize=(9, 5))
+
+plt.plot(
+    range(1, len(alive_history) + 1),
+    alive_history,
+    color="blue",
+    linewidth=2
+)
+
+plt.xlabel("Round Number")
+plt.ylabel("Alive Sensor Nodes")
+plt.title("HCS-Based Network Lifetime")
+plt.grid(True, linestyle="--", alpha=0.6)
+plt.tight_layout()
+plt.show()
+
+# ==========================================
+# 10. GRAPH 2: RESIDUAL ENERGY
+# ==========================================
+plt.figure(figsize=(9, 5))
+
+plt.plot(
+    range(1, len(residual_history) + 1),
+    residual_history,
+    color="green",
+    linewidth=2
+)
+
+plt.xlabel("Round Number")
+plt.ylabel("Residual Energy (J)")
+plt.title("HCS-Based Residual Energy")
+plt.grid(True, linestyle="--", alpha=0.6)
+plt.tight_layout()
+plt.show()
