@@ -1,0 +1,136 @@
+===================================
+PARALLEL CELLULAR AUTOMATA
+RULE 90 PATTERN RECOGNITION
+===================================
+
+-------------------------------
+Testing Pattern 1
+Initial Pattern: [0 0 0 0 0 0 0 0]
+Iteration 1 : [0 0 0 0 0 0 0 0]
+Iteration 2 : [0 0 0 0 0 0 0 0]
+Iteration 3 : [0 0 0 0 0 0 0 0]
+Iteration 4 : [0 0 0 0 0 0 0 0]
+Input Pattern: [0, 0, 0, 0, 0, 0, 0, 0]
+Recognition Result: Class 0 - All Zeros
+Hamming Distance: 0
+-------------------------------
+
+-------------------------------
+Testing Pattern 2
+Initial Pattern: [1 1 1 1 1 1 1 1]
+Iteration 1 : [0 0 0 0 0 0 0 0]
+Iteration 2 : [0 0 0 0 0 0 0 0]
+Iteration 3 : [0 0 0 0 0 0 0 0]
+Iteration 4 : [0 0 0 0 0 0 0 0]
+Input Pattern: [1, 1, 1, 1, 1, 1, 1, 1]
+Recognition Result: Class 0 - All Zeros
+Hamming Distance: 0
+-------------------------------
+
+-------------------------------
+Testing Pattern 3
+Initial Pattern: [1 0 1 0 1 0 1 0]
+Iteration 1 : [0 0 0 0 0 0 0 0]
+Iteration 2 : [0 0 0 0 0 0 0 0]
+Iteration 3 : [0 0 0 0 0 0 0 0]
+Iteration 4 : [0 0 0 0 0 0 0 0]
+Input Pattern: [1, 0, 1, 0, 1, 0, 1, 0]
+Recognition Result: Class 0 - All Zeros
+Hamming Distance: 0
+-------------------------------
+
+-------------------------------
+Testing Pattern 4
+Initial Pattern: [0 1 0 1 0 1 0 1]
+Iteration 1 : [0 0 0 0 0 0 0 0]
+Iteration 2 : [0 0 0 0 0 0 0 0]
+Iteration 3 : [0 0 0 0 0 0 0 0]
+Iteration 4 : [0 0 0 0 0 0 0 0]
+Input Pattern: [0, 1, 0, 1, 0, 1, 0, 1]
+Recognition Result: Class 0 - All Zeros
+Hamming Distance: 0
+-------------------------------
+
+-------------------------------
+Testing Pattern 5
+Initial Pattern: [0 0 0 0 1 1 1 1]
+Iteration 1 : [1 0 0 1 1 0 0 1]
+Iteration 2 : [1 1 1 1 1 1 1 1]
+Iteration 3 : [0 0 0 0 0 0 0 0]
+Iteration 4 : [0 0 0 0 0 0 0 0]
+Input Pattern: [0, 0, 0, 0, 1, 1, 1, 1]
+Recognition Result: Class 0 - All Zeros
+Hamming Distance: 0
+-------------------------------
+
+-------------------------------
+Testing Pattern 6
+Initial Pattern: [1 1 1 1 0 0 0 0]
+Iteration 1 : [1 0 0 1 1 0 0 1]
+Iteration 2 : [1 1 1 1 1 1 1 1]
+Iteration 3 : [0 0 0 0 0 0 0 0]
+Iteration 4 : [0 0 0 0 0 0 0 0]
+Input Pattern: [1, 1, 1, 1, 0, 0, 0, 0]
+Recognition Result: Class 0 - All Zeros
+Hamming Distance: 0
+-------------------------------
+
+-------------------------------
+Testing Pattern 7
+Initial Pattern: [1 0 0 0 0 0 0 0]
+Iteration 1 : [0 1 0 0 0 0 0 1]
+Iteration 2 : [0 0 1 0 0 0 1 0]
+Iteration 3 : [0 1 0 1 0 1 0 1]
+Iteration 4 : [0 0 0 0 0 0 0 0]
+Input Pattern: [1, 0, 0, 0, 0, 0, 0, 0]
+Recognition Result: Class 0 - All Zeros
+Hamming Distance: 0
+-------------------------------
+
+-------------------------------
+Testing Pattern 8
+Initial Pattern: [0 0 0 0 0 0 0 1]
+Iteration 1 : [1 0 0 0 0 0 1 0]
+Iteration 2 : [0 1 0 0 0 1 0 0]
+Iteration 3 : [1 0 1 0 1 0 1 0]
+Iteration 4 : [0 0 0 0 0 0 0 0]
+Input Pattern: [0, 0, 0, 0, 0, 0, 0, 1]
+Recognition Result: Class 0 - All Zeros
+Hamming Distance: 0
+-------------------------------
+
+-------------------------------
+Testing Pattern 9
+Initial Pattern: [1 0 1 0 1 1 1 0]
+Iteration 1 : [0 0 0 0 1 0 1 0]
+Iteration 2 : [0 0 0 1 0 0 0 1]
+Iteration 3 : [1 0 1 0 1 0 1 0]
+Iteration 4 : [0 0 0 0 0 0 0 0]
+Input Pattern: [1, 0, 1, 0, 1, 1, 1, 0]
+Recognition Result: Class 0 - All Zeros
+Hamming Distance: 0
+-------------------------------
+
+-------------------------------
+Testing Pattern 10
+Initial Pattern: [0 0 0 0 1 1 0 1]
+Iteration 1 : [1 0 0 1 1 1 0 0]
+Iteration 2 : [0 1 1 1 0 1 1 1]
+Iteration 3 : [0 1 0 1 0 1 0 1]
+Iteration 4 : [0 0 0 0 0 0 0 0]
+Input Pattern: [0, 0, 0, 0, 1, 1, 0, 1]
+Recognition Result: Class 0 - All Zeros
+Hamming Distance: 0
+-------------------------------
+
+-------------------------------
+Testing Pattern 11
+Initial Pattern: [1 1 0 0 1 0 0 1]
+Iteration 1 : [0 1 1 1 0 1 1 1]
+Iteration 2 : [0 1 0 1 0 1 0 1]
+Iteration 3 : [0 0 0 0 0 0 0 0]
+Iteration 4 : [0 0 0 0 0 0 0 0]
+Input Pattern: [1, 1, 0, 0, 1, 0, 0, 1]
+Recognition Result: Class 0 - All Zeros
+Hamming Distance: 0
+-------------------------------
