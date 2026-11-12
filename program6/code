@@ -1,0 +1,191 @@
+
+
+import numpy as np
+
+# ==========================================
+# PARALLEL CELLULAR AUTOMATA
+# MULTI-PATTERN RECOGNITION
+# RULE 90
+# ==========================================
+
+N = 8
+ITERATIONS = 4
+MAX_DISTANCE = 1
+
+
+# ==========================================
+# 1. DEFINE 8 REFERENCE PATTERNS
+# ==========================================
+
+PATTERNS = {
+    "Class 0 - All Zeros":
+        [0,0,0,0,0,0,0,0],
+
+    "Class 1 - All Ones":
+        [1,1,1,1,1,1,1,1],
+
+    "Class 2 - Alternating":
+        [1,0,1,0,1,0,1,0],
+
+    "Class 3 - Reverse Alternating":
+        [0,1,0,1,0,1,0,1],
+
+    "Class 4 - Half Zeros Half Ones":
+        [0,0,0,0,1,1,1,1],
+
+    "Class 5 - Half Ones Half Zeros":
+        [1,1,1,1,0,0,0,0],
+
+    "Class 6 - First Cell One":
+        [1,0,0,0,0,0,0,0],
+
+    "Class 7 - Last Cell One":
+        [0,0,0,0,0,0,0,1]
+}
+
+
+# ==========================================
+# 2. PARALLEL CELLULAR AUTOMATA RULE 90
+# ==========================================
+
+def parallel_update(state):
+
+    next_state = np.zeros(N, dtype=int)
+
+    for i in range(N):
+
+        left = state[(i - 1) % N]
+        right = state[(i + 1) % N]
+
+        next_state[i] = left ^ right
+
+    return next_state
+
+
+# ==========================================
+# 3. RUN CELLULAR AUTOMATA
+# ==========================================
+
+def run_ca(pattern, display=True):
+
+    state = np.array(pattern, dtype=int)
+
+    if display:
+        print("Initial Pattern:", state)
+
+    for i in range(ITERATIONS):
+
+        state = parallel_update(state)
+
+        if display:
+            print("Iteration", i + 1, ":", state)
+
+    return state
+
+
+# ==========================================
+# 4. EVOLVE ALL REFERENCE PATTERNS
+# ==========================================
+
+EVOLVED_PATTERNS = {}
+
+for class_name, pattern in PATTERNS.items():
+
+    EVOLVED_PATTERNS[class_name] = run_ca(
+        pattern, display=False
+    )
+
+
+# ==========================================
+# 5. HAMMING DISTANCE
+# ==========================================
+
+def calculate_distance(pattern1, pattern2):
+
+    return np.sum(
+        np.array(pattern1) != np.array(pattern2)
+    )
+
+
+# ==========================================
+# 6. PATTERN RECOGNITION
+# ==========================================
+
+def recognize_pattern(pattern):
+
+    final_state = run_ca(pattern)
+
+    minimum_distance = N + 1
+    recognized_class = "Unknown Pattern"
+
+    for class_name, reference in EVOLVED_PATTERNS.items():
+
+        distance = calculate_distance(
+            final_state, reference
+        )
+
+        if distance < minimum_distance:
+
+            minimum_distance = distance
+            recognized_class = class_name
+
+    if minimum_distance > MAX_DISTANCE:
+
+        recognized_class = "Unknown Pattern"
+
+    return recognized_class, minimum_distance
+
+
+# ==========================================
+# 7. TEST PATTERNS
+# ==========================================
+
+test_patterns = [
+
+    [0,0,0,0,0,0,0,0],
+
+    [1,1,1,1,1,1,1,1],
+
+    [1,0,1,0,1,0,1,0],
+
+    [0,1,0,1,0,1,0,1],
+
+    [0,0,0,0,1,1,1,1],
+
+    [1,1,1,1,0,0,0,0],
+
+    [1,0,0,0,0,0,0,0],
+
+    [0,0,0,0,0,0,0,1],
+
+    # Noisy patterns
+    [1,0,1,0,1,1,1,0],
+
+    [0,0,0,0,1,1,0,1],
+
+    # Unknown pattern
+    [1,1,0,0,1,0,0,1]
+]
+
+
+# ==========================================
+# 8. MAIN PROGRAM
+# ==========================================
+
+print("===================================")
+print("PARALLEL CELLULAR AUTOMATA")
+print("RULE 90 PATTERN RECOGNITION")
+print("===================================")
+
+for index, pattern in enumerate(test_patterns):
+
+    print("\n-------------------------------")
+    print("Testing Pattern", index + 1)
+
+    result, distance = recognize_pattern(pattern)
+
+    print("Input Pattern:", pattern)
+    print("Recognition Result:", result)
+    print("Hamming Distance:", distance)
+
+    print("-------------------------------")
